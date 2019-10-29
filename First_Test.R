@@ -25,16 +25,16 @@ dall = dall[ , !(names(dall) %in% c("HARM_EV.y"))]
 
 
 
-train <- dall[dall$CASENUM<=201701000000,]
+train <- dall[dall$CASENUM<=201701000000,] #3/4 roughly
 test <- dall[dall$CASENUM<=201701000000,]
-
 
 ### Regression techniques
 
 # Linear
 
-lin <- lm(HARM_EV.x ~ ., data = train) 
-#most important features: PER_TYP, PEDPOS, VE_TOTAL, PEDS, PERNOTMVIT, RELJCT2_IM
+lin <- lm(INJ_SEV ~ ., data = train) 
+#most important features: REGION.x, URBANICITY.x, AGE, P_SF1, INJSEV_IM, PSUSTRAT.x, WEIGHT.x
+# NUM_INJ, MAX_SEV, MAXSEV_IM, NO_INJ_IM
 summary(lin)
 #cor(train)
 
@@ -43,7 +43,7 @@ summary(lin)
 library(rpart)
 library(rpart.plot)
 
-tree = rpart(HARM_EV.x ~ .,
+tree = rpart(INJ_SEV ~ .,
                    data=train,
                    method="anova",
                    minbucket = 25,
@@ -52,39 +52,37 @@ tree = rpart(HARM_EV.x ~ .,
 # Random Forest
 # Doesn't work yet for some reason
 library(randomForest)
-rf = randomForest(HARM_EV.x~., data=train,
+rf = randomForest(INJ_SEV~., data=train,
                       ntree=500,mtry=4,nodesize=5)
 
 sort(importance(rf))
 
 # Prediction
-SST <- sum((mean(train$HARM_EV.x)-test$HARM_EV.x)^2) 
+SST <- sum((mean(train$INJ_SEV)-test$INJ_SEV)^2) 
 
-OSR2_lin <- 1- sum((predict(lin, newdata=test)-test$HARM_EV.x)^2) / SST #0.35
-OSR2_tree <- 1- sum((predict(tree, newdata=test)-test$HARM_EV.x)^2) / SST #0.41
-OSR2_rf <- 1- sum((predict(rf, newdata=test)-test$HARM_EV.x)^2) / SST #doesn't work, yet
+OSR2_lin <- 1- sum((predict(lin, newdata=test)-test$INJ_SEV)^2) / SST #0.939
+OSR2_tree <- 1- sum((predict(tree, newdata=test)-test$INJ_SEV)^2) / SST #0.926
+OSR2_rf <- 1- sum((predict(rf, newdata=test)-test$INJ_SEV)^2) / SST #doesn't work, yet
 
 ### Classification techniques
 
 dall_class = dall
-dall_class$HARM_EV.x.cat = dall_class$HARM_EV.x >9
-dall_class = dall_class[ , !(names(dall) %in% c("HARM_EV.x"))]
+dall_class$INJ_SEV.cat = dall_class$INJ_SEV >3
+dall_class = dall_class[ , !(names(dall) %in% c("INJ_SEV"))]
 
 train_class <- dall_class[dall_class$CASENUM<=201701000000,]
 test_class <- dall_class[dall_class$CASENUM<=201701000000,]
 
-train$HARM_EV.x.cat = train$HARM_EV.x >9
-
 # Logistic
 
-logistic <- glm(HARM_EV.x.cat~., data=train_class, family="binomial") 
+logistic <- glm(INJ_SEV.cat~., data=train_class, family="binomial") #does not converge
 
 # CART class
 
 library(rpart)
 library(rpart.plot)
-tree_class = rpart(HARM_EV.x.cat~.,
-      data = train, method="class",
+tree_class = rpart(INJ_SEV.cat~.,
+      data = train_class, method="class",
       parms=list(loss=cbind(c(0, 20), c(1, 0))),
       minbucket=5, cp=0.02)
 
@@ -92,14 +90,14 @@ tree_class = rpart(HARM_EV.x.cat~.,
 
 pred_logistic <- predict(logistic, newdata=test_class, type="response") 
 threshold <- 0.2
-table(test_class$HARM_EV.x.cat, pred_logistic >= threshold)
-loss <- sum(pred_logistic <= threshold & test_class$HARM_EV.x.cat == 0) -
-  4 * sum(pred_logistic <= threshold & test_class$HARM_EV.x.cat == 1)
+table(test_class$INJ_SEV.cat, pred_logistic >= threshold)
+loss <- sum(pred_logistic <= threshold & test_class$INJ_SEV.cat == 0) -
+  4 * sum(pred_logistic <= threshold & test_class$INJ_SEV.cat == 1)
 
 # should adapt this
 if(FALSE) {
 pred <- prediction(predict(mod, newdata=test,
-                           type="response"), test$Churn)
+                           type="response"), test$INJ_SEV.cat)
 performance(pred, "auc")@y.values[[1]]
 rocr.pred.df <- data.frame(fpr=slot(performance(rocr.pred, "tpr", "fpr"),"x.values")[[1]], tpr=slot(performance(rocr.pred, "tpr", "fpr"),"y.values")[[1]])
 ggplot(rocr.pred.df,aes(x=fpr)) +geom_line(aes(y=tpr),lwd=1)
