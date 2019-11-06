@@ -1,32 +1,46 @@
+library(dplyr)
+library(caret)
+
+# LOADING DATA
 acc = read.csv("Data/CRSS2017CSV/ACCIDENT.csv", stringsAsFactors = F)
 pers = read.csv("Data/CRSS2017CSV/PERSON.csv", stringsAsFactors = F)
 pb = read.csv("Data/CRSS2017CSV/PBTYPE.csv", stringsAsFactors = F)
 
+# BUILDING DATA FAME
+pers_proc = pers[which(pers$VEH_NO==0),]  # Filter only pedestrians
 
+# Join data together (Outerjoins)
+dper <- merge(pers_proc, pb, by=c("CASENUM","VEH_NO","PER_NO"), suffixes=c(".per", ".pb"))
+dall <- merge(dper, acc, by=c("CASENUM"), suffixes=c(".per",".acc"))
 
-pers_proc = pers[which(pers$VEH_NO==0),]
-#need to drop some variables with NaNs
-pers_proc = pers_proc[ , !(names(pers_proc) %in% c("MAKE","BODY_TYP", "MOD_YEAR", "MAK_MOD", "TOW_VEH", "SPEC_USE", "EMER_USE", "ROLLOVER", "IMPACT1", "FIRE_EXP"))]
+summary(dall)
 
-#Inner join #keeps only if there is a match
-dper <- merge(pers_proc, pb, by=c("CASENUM","PER_NO"))
+### SET FACTOR COLUMNS TO USE 
+### TODO Update here to define which columns to consider in models.
+col.factors = c("SEX","PER_TYP",
+                "DRINKING","ALC_STATUS","DRUGS","DSTATUS",
+                "WRK_ZONE", "REL_ROAD", "INT_HWY", "REGION",
+                "DAY_WEEK", "MONTH.acc", "HOUR.acc",
+                "PBPTYPE","PBCWALK","PBSWALK","PBSZONE","PEDLOC", "PEDDIR","MOTDIR","MOTMAN",
+                "HOSPITAL")
+col.numbers = c("INJ_SEV", 
+                "YEAR",
+                "AGE", "WEIGHT",
+                "DRUGRES1", "DRUGRES2", "DRUGRES3")
 
-#Outer join
-#dall <- merge(pers_proc, pb, by=c("CASENUM","PER_NO"), all=TRUE)
+# Force columns to specific data types
+dall[, col.factors] <- lapply(dall[, col.factors], factor)
+dall[, col.numbers] <- lapply(dall[, col.numbers], as.numeric)
 
-dall <- merge(dper, acc, by="CASENUM")
-#drop more features that cause NaNs
-dall = dall[ , !(names(dall) %in% c("VEH_NO.x","SEAT_POS", "REST_USE", "REST_MIS", "AIR_BAG", "EJECTION" ))]
-dall = dall[ , !(names(dall) %in% c("DRUGTST2", "DRUGTST3", "DRUGRES2", "DRUGRES3", "P_SF3", "EJECT_IM", "SEAT_IM", "VEH_NO.y", "REGION.y", "PSU.y"))]
-dall = dall[ , !(names(dall) %in% c("PJ.y", "PSU_VAR.y", "URBANICITY.y", "STRATUM.y", "PBPTYPE", "PBAGE", "PBSEX" ))]
-dall = dall[ , !(names(dall) %in% c("PSUSTRAT.y", "WEIGHT.y", "REGION", "PSU", "PJ", "PSU_VAR", "URBANICITY", "STRATUM", "VE_FORMS.y", "PVH_INVL"))]
-dall = dall[ , !(names(dall) %in% c("MONTH.y", "YEAR", "HOUR.y", "MINUTE.y", "MAN_COLL.y", "SCH_BUS.y", "WKDY_IM", "EVENT1_IM", "MANCOL_IM", "PSUSTRAT", "WEIGHT"  ))]
-dall = dall[ , !(names(dall) %in% c("HARM_EV.y"))]
+# Build data frame with only these columns
+df <- select(dall, c(col.factors, col.numbers))
 
+# Split data frame into training and test data
+set.seed(321)
+train.indexes <- createDataPartition(df$INJ_SEV, p=0.7, list=FALSE)
+train <- df[df.train.indexes,]
+test <- df[-df.train.indexes,]
 
-
-train <- dall[dall$CASENUM<=201701000000,] #3/4 roughly
-test <- dall[dall$CASENUM<=201701000000,]
 
 ### Regression techniques
 
@@ -66,12 +80,12 @@ OSR2_rf <- 1- sum((predict(rf, newdata=test)-test$INJ_SEV)^2) / SST #doesn't wor
 
 ### Classification techniques
 
-dall_class = dall
+dall_class <- df
 dall_class$INJ_SEV.cat = dall_class$INJ_SEV >3
-dall_class = dall_class[ , !(names(dall) %in% c("INJ_SEV"))]
+dall_class = dall_class[ , !(names(dall_class) %in% c("INJ_SEV"))]
 
-train_class <- dall_class[dall_class$CASENUM<=201701000000,]
-test_class <- dall_class[dall_class$CASENUM<=201701000000,]
+train_class <- dall_class[train.indexes,]
+test_class <- dall_class[-train.indexes,]
 
 # Logistic
 
