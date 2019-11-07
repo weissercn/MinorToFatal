@@ -21,6 +21,7 @@ col.factors = c("SEX","PER_TYP",
                 "DRINKING","ALC_STATUS","DRUGS","DSTATUS",
                 "WRK_ZONE", "REL_ROAD", "INT_HWY", "REGION",
                 "DAY_WEEK", "MONTH.acc", "HOUR.acc",
+                "WEATHER1","WEATHER2",
                 "PBPTYPE","PBCWALK","PBSWALK","PBSZONE","PEDLOC", "PEDDIR","MOTDIR","MOTMAN",
                 "HOSPITAL")
 col.numbers = c("INJ_SEV", 
