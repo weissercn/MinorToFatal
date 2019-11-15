@@ -55,7 +55,8 @@ data.auto_factor <- function(df, max_levels = 25) {
 
 data.filter <- function(df) {
   # Filter only pedestrians (PBPTYPE is 5 and PEDLOC <= 2)
-  df[which(df$PBPTYPE==5 & df$PEDLOC<=2),]
+  #   Also filter out unknown severities
+  df[which(df$PBPTYPE==5 & df$PEDLOC<=2 & df$INJ_SEV<=4),]
 }
 
 data.get_raw_df <- function() {
