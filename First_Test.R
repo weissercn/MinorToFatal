@@ -1,46 +1,16 @@
 library(dplyr)
 library(caret)
 
-# LOADING DATA
-acc = read.csv("Data/CRSS2017CSV/ACCIDENT.csv", stringsAsFactors = F)
-pers = read.csv("Data/CRSS2017CSV/PERSON.csv", stringsAsFactors = F)
-pb = read.csv("Data/CRSS2017CSV/PBTYPE.csv", stringsAsFactors = F)
+# Load Data
+source('data-helpers.R')
+df <- data.get_df();
 
-# BUILDING DATA FAME
-pers_proc = pers[which(pers$VEH_NO==0),]  # Filter only pedestrians
-
-# Join data together (Outerjoins)
-dper <- merge(pers_proc, pb, by=c("CASENUM","VEH_NO","PER_NO"), suffixes=c(".per", ".pb"))
-dall <- merge(dper, acc, by=c("CASENUM"), suffixes=c(".per",".acc"))
-
-summary(dall)
-
-### SET FACTOR COLUMNS TO USE 
-### TODO Update here to define which columns to consider in models.
-col.factors = c("SEX","PER_TYP",
-                "DRINKING","ALC_STATUS","DRUGS","DSTATUS",
-                "WRK_ZONE", "REL_ROAD", "INT_HWY", "REGION",
-                "DAY_WEEK", "MONTH.acc", "HOUR.acc",
-                "WEATHER1","WEATHER2",
-                "PBPTYPE","PBCWALK","PBSWALK","PBSZONE","PEDLOC", "PEDDIR","MOTDIR","MOTMAN",
-                "HOSPITAL")
-col.numbers = c("INJ_SEV", 
-                "YEAR",
-                "AGE", "WEIGHT",
-                "DRUGRES1", "DRUGRES2", "DRUGRES3")
-
-# Force columns to specific data types
-dall[, col.factors] <- lapply(dall[, col.factors], factor)
-dall[, col.numbers] <- lapply(dall[, col.numbers], as.numeric)
-
-# Build data frame with only these columns
-df <- select(dall, c(col.factors, col.numbers))
 
 # Split data frame into training and test data
 set.seed(321)
 train.indexes <- createDataPartition(df$INJ_SEV, p=0.7, list=FALSE)
-train <- df[df.train.indexes,]
-test <- df[-df.train.indexes,]
+train <- df[train.indexes,]
+test <- df[-train.indexes,]
 
 
 ### Regression techniques
