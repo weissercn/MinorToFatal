@@ -38,15 +38,15 @@ cart.cv <- train(INJ_SEV~.,
                  data = df.train,
                  method = "rpart",
                  trControl = trainControl(method="cv", number=10),
-                 weights = ifelse(df.train$INJ_SEV == 1, 1, 1), # TODO: should we weight false positives or negatives differently?
-                 metric = "Accuracy",
+                 #weights = ifelse(df.train$INJ_SEV == 1, 1, 1), # TODO: should we weight false positives or negatives differently?
+                 #metric = "Accuracy",
                  tuneGrid = data.frame(.cp=seq(0.001, 0.06, by=0.002)))
 
 # Retrain model with best CP value
 clf_cart = rpart(INJ_SEV~.,
                  data = df.train,
                  method="class",
-                 parms=list(loss=cbind(c(0, 1), c(1, 0))), # TODO: should we weight false positives or negatives differently?
+                 #parms=list(loss=cbind(c(0, 1), c(1, 0))), # TODO: should we weight false positives or negatives differently?
                  minbucket=5, cp=cart.cv$bestTune$cp)
 
 # Random forest #until now used for regression
@@ -77,7 +77,7 @@ nnet.fit <- train(INJ_SEV ~.,
 clf_nnet = nnet(INJ_SEV ~.,
                 data = df.train,
                 size = nnet.fit$bestTune$size,
-                decay = nnet.fit$bestTune$deacy);
+                decay = nnet.fit$bestTune$decay)
 
 # KNN
 knn.fit <- train(INJ_SEV ~.,
