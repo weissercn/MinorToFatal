@@ -2,15 +2,20 @@ library(dplyr)
 library(caret)
 library(rpart)
 library(rpart.plot)
+library(nnet)
 #install.packages('e1071')
 library(e1071) 
+library(randomForest)
+library(class)
 
-df = read.csv("Data/CRSS2017CSV/PERSON.csv", stringsAsFactors = F)
+# Load Data
+source('data-helpers.R')
+df.orig <- data.get_df();
 
 ## Binary classification
-df$INJ_SEV.cat = df$INJ_SEV >2
-df.train$INJ_SEV.cat <- as.factor(df.train$INJ_SEV.cat)
-df = df[ , !(names(df) %in% c("INJ_SEV"))]
+df <- df.orig
+df$INJ_SEV <- as.factor(df.orig$INJ_SEV > 2)
+#df = df[ , !(names(df) %in% c("INJ_SEV"))]
 
 ## HW3 for cross validation
 
@@ -26,66 +31,101 @@ df.test <- df[-df.train.indexes,]
 ### Classification techniques
 
 # Logistic
+clf_logistic <- glm(INJ_SEV~., data=df.train, family="binomial") #does not converge
 
-clf_logistic <- glm(INJ_SEV.cat~., data=df.train, family="binomial") #does not converge
+# CART
+cart.cv <- train(INJ_SEV~.,
+                 data = df.train,
+                 method = "rpart",
+                 trControl = trainControl(method="cv", number=10),
+                 weights = ifelse(df.train$INJ_SEV == 1, 1, 1), # TODO: should we weight false positives or negatives differently?
+                 metric = "Accuracy",
+                 tuneGrid = data.frame(.cp=seq(0.001, 0.06, by=0.002)))
 
-# CART class
-clf_tree_class = rpart(INJ_SEV.cat~.,
-      data = df.train, method="class",
-      parms=list(loss=cbind(c(0, 20), c(1, 0))),
-      minbucket=5, cp=0.02)
+# Retrain model with best CP value
+clf_cart = rpart(INJ_SEV~.,
+                 data = df.train,
+                 method="class",
+                 parms=list(loss=cbind(c(0, 1), c(1, 0))), # TODO: should we weight false positives or negatives differently?
+                 minbucket=5, cp=cart.cv$bestTune$cp)
 
 # Random forest #until now used for regression
 
 # https://www.rdocumentation.org/packages/caret/versions/4.47/topics/train
 # glm, ada, 
 # https://topepo.github.io/caret/available-models.html
-
-df.train.noINJ_SEV = subset(df.train, select=-c(INJ_SEV.cat))
-
-
-
-rf.cv = train(y = df.train$INJ_SEV.cat,
-      x = subset(df.train, select=-c(INJ_SEV.cat)),
-      method="rf", nodesize=25, ntree=10,
+rf.cv = train(INJ_SEV ~.,
+      data=df.train,
+      method="rf",
+      nodesize=25, ntree=10,  # TODO: why these values?
       trControl=trainControl(method="cv", number=10),  # 10-fold 
-      tuneGrid=data.frame(mtry=seq(1,50,1))) 
+      tuneGrid=data.frame(mtry=seq(1,50,1)));
+clf_rf = randomForest(INJ_SEV ~.,
+                      data=df.train,
+                      mtry=rf.cv$bestTune$mtry, 
+                      nodesize=25, ntree=10);
 
 
-nnetFit <- train(x=subset(df.train, select=-c(INJ_SEV.cat)), y=df.train$INJ_SEV.cat,
-                 method = "nnet",
-                 #preProcess = "range", 
-                 tuneLength = 2,
-                 trace = FALSE,
-                 maxit = 100)
-knnFit1 <- train(x=subset(df.train, select=-c(INJ_SEV.cat)), y=df.train$INJ_SEV.cat,
-                  "knn",
-                  tuneLength = 10,
-                  trControl = trainControl(method = "cv"))
+# Neural Network
+nnet.fit <- train(INJ_SEV ~.,
+                   data=df.train,
+                   method = "nnet",
+                   #preProcess = "range", 
+                   tuneLength = 2,
+                   trace = FALSE,
+                   maxit = 100)
+clf_nnet = nnet(INJ_SEV ~.,
+                data = df.train,
+                size = nnet.fit$bestTune$size,
+                decay = nnet.fit$bestTune$deacy);
 
-knnFit1 <- train(x=subset(df.train, select=-c(INJ_SEV.cat)), y=df.train$INJ_SEV.cat,
+# KNN
+knn.fit <- train(INJ_SEV ~.,
+                 data=df.train,
                  "knn",
-                 trControl = trainControl(method = "cv", number=10))
+                 tuneLength = 10,
+                 trControl = trainControl(method = "cv", number = 10))
+# TODO - how do we re-train knn model?
+clf_knn = knn.fit$finalModel
 
-knnFit2 <- train(TrainData, TrainClasses,
-                 "knn", tuneLength = 10, 
-                 trControl = trainControl(method = "boot"))
 
-clf_rf = rf.cv$finalModel
 
 # SVM
-clf_svm = svm(formula = INJ_SEV.cat ~ ., 
-                 data = df.train, 
-                 type = 'C-classification', 
-                 kernel = 'linear')  #radial basis
+clf_svm = svm(formula = INJ_SEV ~ ., 
+              data = df.train, 
+              type = 'C-classification', 
+              kernel = 'linear')  #radial basis
 
 #Prediction
-
 pred_logistic <- predict(clf_logistic, newdata=df.test, type="response") 
 threshold <- 0.2
-table(test$INJ_SEV.cat, pred_logistic >= threshold)
-loss <- sum(pred_logistic <= threshold & test$INJ_SEV.cat == 0) -
-  4 * sum(pred_logistic <= threshold & test$INJ_SEV.cat == 1)
+table(df.test$INJ_SEV, pred_logistic >= threshold)
+loss <- sum(pred_logistic <= threshold & df.test$INJ_SEV == 0) -
+  4 * sum(pred_logistic <= threshold & df.test$INJ_SEV == 1)
+
+
+#Helper to validate classification models
+validate_clf <- function(model) {
+  # Make prediction and build confusion matrix
+  pred = predict(model, newdata=df.test, type="class");
+  confusion.matrix = table(df.test$INJ_SEV, pred);
+  
+  # Accuracy, TPR, FPR
+  accuracy <- sum(diag(confusion.matrix))/sum(confusion.matrix);
+  TPR <- confusion.matrix[2,2]/sum(confusion.matrix[2,]);
+  FPR <- confusion.matrix[1,2]/sum(confusion.matrix[1,]);
+  
+  c(Accuracy=accuracy, TPR=TPR, FPR=FPR)
+}
+
+# Output the performance of each model
+validate_clf(clf_svm)
+validate_clf(clf_nnet)
+validate_clf(clf_cart)
+validate_clf(clf_rf)
+
+validate_clf(clf_knn)   # This line currently fails!
+
 
 # should adapt this
 if(FALSE) {
