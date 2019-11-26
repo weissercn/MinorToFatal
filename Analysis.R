@@ -79,15 +79,6 @@ clf_nnet = nnet(INJ_SEV ~.,
                 size = nnet.fit$bestTune$size,
                 decay = nnet.fit$bestTune$decay)
 
-# KNN
-knn.fit <- train(INJ_SEV ~.,
-                 data=df.train,
-                 "knn",
-                 tuneLength = 10,
-                 trControl = trainControl(method = "cv", number = 10))
-# TODO - how do we re-train knn model?
-clf_knn = knn.fit$finalModel
-
 
 
 # SVM
@@ -124,7 +115,7 @@ validate_clf(clf_nnet)
 validate_clf(clf_cart)
 validate_clf(clf_rf)
 
-validate_clf(clf_knn)   # This line currently fails!
+
 
 
 # should adapt this
@@ -137,10 +128,6 @@ ggplot(rocr.pred.df,aes(x=fpr)) +geom_line(aes(y=tpr),lwd=1)
 }
 
 
-# Improvements :
-# Figure out what dependent variable is
-# Should we use classification (two or multiclass?) or regression?
-# Get half of this  code to run
-# Use crossvalidation (lecture 7)
+
 
 
