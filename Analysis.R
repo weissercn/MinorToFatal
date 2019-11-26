@@ -17,10 +17,7 @@ df <- df.orig
 df$INJ_SEV <- as.factor(df.orig$INJ_SEV > 2)
 #df = df[ , !(names(df) %in% c("INJ_SEV"))]
 
-## HW3 for cross validation
 
-
- 
 # Split data frame into training and test data
 set.seed(321)
 df.train.indexes <- createDataPartition(df$INJ_SEV, p=0.7, list=FALSE)
@@ -80,16 +77,6 @@ clf_nnet = nnet(INJ_SEV ~.,
                 decay = nnet.fit$bestTune$decay)
 
 # KNN
-knn.fit <- train(INJ_SEV ~.,
-                 data=df.train,
-                 "knn",
-                 tuneLength = 10,
-                 trControl = trainControl(method = "cv", number = 10))
-# TODO - how do we re-train knn model?
-clf_knn = knn.fit$finalModel
-
-
-
 # SVM
 clf_svm = svm(formula = INJ_SEV ~ ., 
               data = df.train, 
@@ -124,8 +111,10 @@ validate_clf(clf_nnet)
 validate_clf(clf_cart)
 validate_clf(clf_rf)
 
-validate_clf(clf_knn)   # This line currently fails!
-
+# Other outputs that are useful.
+importance(clf_rf)
+print(clf_cart)
+prp(clf_cart)
 
 # should adapt this
 if(FALSE) {
@@ -135,12 +124,5 @@ performance(pred, "auc")@y.values[[1]]
 rocr.pred.df <- data.frame(fpr=slot(performance(rocr.pred, "tpr", "fpr"),"x.values")[[1]], tpr=slot(performance(rocr.pred, "tpr", "fpr"),"y.values")[[1]])
 ggplot(rocr.pred.df,aes(x=fpr)) +geom_line(aes(y=tpr),lwd=1)
 }
-
-
-# Improvements :
-# Figure out what dependent variable is
-# Should we use classification (two or multiclass?) or regression?
-# Get half of this  code to run
-# Use crossvalidation (lecture 7)
 
 

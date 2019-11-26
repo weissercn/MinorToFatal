@@ -6,8 +6,8 @@ data.factors = c("MONTH","WKDY_IM","HOUR_IM","TYP_INT","REL_ROAD","WRK_ZONE",
                  "LGTCON_IM","WEATHER1","WEATHER2","SCH_BUS","ALCHL_IM",
                  
                  #"MAKE.veh", "MODEL",  # Removed due to > 53 factors
-                 "BDYTYP_IM","MDLYR_IM","TOW_VEH.veh","GVWR","V_CONFIG","BUS_USE",
-                 "SPEC_USE.veh", "V_ALCH_IM","SPEEDREL","DR_SF1","DR_SF2","DR_SF3","DR_SF4",
+                 "BDYTYP_IM","TOW_VEH.veh","GVWR","V_CONFIG","BUS_USE",
+                 "SPEC_USE.veh","V_ALCH_IM","SPEEDREL","DR_SF1","DR_SF2","DR_SF3","DR_SF4",
                  "VTRAFWAY","VALIGN","VPROFILE","VSURCOND","VTRAFCON",
                  "VTCONT_F","PCRASH1_IM",
                  
@@ -23,6 +23,7 @@ data.factors = c("MONTH","WKDY_IM","HOUR_IM","TYP_INT","REL_ROAD","WRK_ZONE",
 
 data.numbers = c("INJ_SEV",
                  "TRAV_SP","VNUM_LAN","VSPD_LIM",
+                 "MDLYR_IM",
                  "PBAGE");
 
 data.get_df <- function() {
@@ -33,7 +34,10 @@ data.get_df <- function() {
   df <- data.filter(df)
   
   # Format data according to factors/numbers
-  data.format(df);
+  df <- data.format(df);
+  
+  # Clean infrequently occuring factor values
+  data.clean_factors(df);
 }
 
 data.format <- function(df, factors = data.factors, numbers = data.numbers) {
@@ -51,6 +55,34 @@ data.auto_factor <- function(df, max_levels = 25) {
     }
   }
   df
+}
+
+# Automatically consolidates infrequently occuring values.
+# Removes reoccuring values if need be.
+data.clean_factors <- function(df, min_data = 5) {
+  df.cleaned = df;
+  
+  for(p in names(df.cleaned)) {
+    if(is.factor(df.cleaned[,p])) {
+      df.cleaned[,p] = as.numeric(df.cleaned[,p])
+      df.cleaned[which(df.cleaned[,p]==99),p] = 98;
+      
+      for(v in unique(df.cleaned[, p])) {
+        count = length(which(df.cleaned[,p]==v))
+        if(count <= min_data) {
+          df.cleaned[which(df.cleaned[,p]==v),p] = 98;
+        }
+      }
+      
+      if(length(which(df.cleaned[,p]==98)) <= min_data) {
+        df.cleaned = df.cleaned[which(df.cleaned[,p]!=98),];
+      }
+      
+      df.cleaned[,p] = factor(df.cleaned[,p])
+    }
+  }
+  
+  df.cleaned;
 }
 
 data.filter <- function(df) {
@@ -100,3 +132,4 @@ data.load_csvs <- function(file) {
   
   ldply(files, read.csv)
 }
+
