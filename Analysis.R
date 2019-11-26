@@ -76,7 +76,6 @@ clf_nnet = nnet(INJ_SEV ~.,
                 size = nnet.fit$bestTune$size,
                 decay = nnet.fit$bestTune$decay)
 
-# KNN
 # SVM
 clf_svm = svm(formula = INJ_SEV ~ ., 
               data = df.train, 
@@ -116,6 +115,7 @@ importance(clf_rf)
 print(clf_cart)
 prp(clf_cart)
 
+
 # should adapt this
 if(FALSE) {
 pred <- prediction(predict(mod, newdata=df.test,
@@ -124,5 +124,4 @@ performance(pred, "auc")@y.values[[1]]
 rocr.pred.df <- data.frame(fpr=slot(performance(rocr.pred, "tpr", "fpr"),"x.values")[[1]], tpr=slot(performance(rocr.pred, "tpr", "fpr"),"y.values")[[1]])
 ggplot(rocr.pred.df,aes(x=fpr)) +geom_line(aes(y=tpr),lwd=1)
 }
-
 
