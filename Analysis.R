@@ -84,8 +84,15 @@ clf_svm = svm(formula = INJ_SEV ~ .,
 
 #Prediction
 pred_logistic <- predict(clf_logistic, newdata=df.test, type="response") 
-threshold <- 0.2
-table(df.test$INJ_SEV, pred_logistic >= threshold)
+threshold <- 0.5
+confusion.matrix = table(df.test$INJ_SEV, pred_logistic >= threshold)
+
+# Accuracy, TPR, FPR
+accuracy <- sum(diag(confusion.matrix))/sum(confusion.matrix);
+TPR <- confusion.matrix[2,2]/sum(confusion.matrix[2,]);
+FPR <- confusion.matrix[1,2]/sum(confusion.matrix[1,]);
+c(Accuracy=accuracy, TPR=TPR, FPR=FPR)
+
 loss <- sum(pred_logistic <= threshold & df.test$INJ_SEV == 0) -
   4 * sum(pred_logistic <= threshold & df.test$INJ_SEV == 1)
 
