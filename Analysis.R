@@ -7,6 +7,7 @@ library(nnet)
 library(e1071) 
 library(randomForest)
 library(class)
+library(glmnet)
 
 # Load Data
 source('data-helpers.R')
@@ -29,6 +30,14 @@ df.test <- df[-df.train.indexes,]
 
 # Logistic
 clf_logistic <- glm(INJ_SEV~., data=df.train, family="binomial") #does not converge
+
+
+# Regularized Regression
+set.seed(123) 
+lasso.cv <- cv.glmnet(model.matrix(INJ_SEV~., df.train)[,-1], df.train$INJ_SEV, alpha = 1, family = "binomial")
+clf_reg <- glmnet(model.matrix(INJ_SEV~., df.train)[,-1], df.train$INJ_SEV, 
+                  alpha = 1, family = "binomial",
+                  lambda = lasso.cv$lambda.min)
 
 # CART
 cart.cv <- train(INJ_SEV~.,
@@ -82,7 +91,7 @@ clf_svm = svm(formula = INJ_SEV ~ .,
               type = 'C-classification', 
               kernel = 'linear')  #radial basis
 
-#Prediction
+#Linear Regression Prediction
 pred_logistic <- predict(clf_logistic, newdata=df.test, type="response") 
 threshold <- 0.5
 confusion.matrix = table(df.test$INJ_SEV, pred_logistic >= threshold)
@@ -93,8 +102,16 @@ TPR <- confusion.matrix[2,2]/sum(confusion.matrix[2,]);
 FPR <- confusion.matrix[1,2]/sum(confusion.matrix[1,]);
 c(Accuracy=accuracy, TPR=TPR, FPR=FPR)
 
-loss <- sum(pred_logistic <= threshold & df.test$INJ_SEV == 0) -
-  4 * sum(pred_logistic <= threshold & df.test$INJ_SEV == 1)
+# Regularization Prediction
+pred_reg <- predict(clf_reg, newx=model.matrix(INJ_SEV~., df.test)[,-1]) 
+threshold <- 0.5
+confusion.matrix = table(df.test$INJ_SEV, pred_reg >= threshold)
+
+# Accuracy, TPR, FPR
+accuracy <- sum(diag(confusion.matrix))/sum(confusion.matrix);
+TPR <- confusion.matrix[2,2]/sum(confusion.matrix[2,]);
+FPR <- confusion.matrix[1,2]/sum(confusion.matrix[1,]);
+c(Accuracy=accuracy, TPR=TPR, FPR=FPR)
 
 
 #Helper to validate classification models
