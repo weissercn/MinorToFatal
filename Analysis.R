@@ -136,16 +136,5 @@ validate_clf(clf_rf)
 
 # Other outputs that are useful.
 importance(clf_rf)
-print(clf_cart)
-prp(clf_cart)
-
-
-# should adapt this
-if(FALSE) {
-pred <- prediction(predict(mod, newdata=df.test,
-                           type="response"), test$INJ_SEV.cat)
-performance(pred, "auc")@y.values[[1]]
-rocr.pred.df <- data.frame(fpr=slot(performance(rocr.pred, "tpr", "fpr"),"x.values")[[1]], tpr=slot(performance(rocr.pred, "tpr", "fpr"),"y.values")[[1]])
-ggplot(rocr.pred.df,aes(x=fpr)) +geom_line(aes(y=tpr),lwd=1)
-}
-
+clf_cart$variable.importance
+clf_reg$beta[which(abs(clf_reg$beta) > 0 ),]
