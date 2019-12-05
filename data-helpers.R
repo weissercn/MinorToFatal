@@ -64,7 +64,7 @@ data.clean_factors <- function(df, min_data = 5) {
   
   for(p in names(df.cleaned)) {
     if(is.factor(df.cleaned[,p])) {
-      df.cleaned[,p] = as.numeric(df.cleaned[,p])
+      df.cleaned[,p] = as.character(df.cleaned[,p])
       df.cleaned[which(df.cleaned[,p]==99),p] = 98;
       
       for(v in unique(df.cleaned[, p])) {
