@@ -60,5 +60,4 @@ accuracy = sum(df.test$INJ_SEV == FALSE)/nrow((df.test))
 TPR = 0 #correctly predicts positive class
 FPR = 0 #incorrectly predicts the positive class
 c(Accuracy=accuracy, TPR=TPR, FPR=FPR) # Currently the model is a slight improvement over the baseline, yay!
-# Note to Constantin: did I calculate TPR and FPR for the baseline?
-# Constantin : yes you did
+# Testing GitHub- Zade
