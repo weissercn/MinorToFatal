@@ -2,16 +2,16 @@ library(dplyr)
 library(plyr)
 library(ggplot2)
 
-data.factors = c("MONTH","WKDY_IM","HOUR_IM","TYP_INT","REL_ROAD","WRK_ZONE",
-                 "LGTCON_IM","WEATHER1","WEATHER2","SCH_BUS","ALCHL_IM",
+data.factors = c("MONTH","WKDY_IM","HOUR_IM","TYP_INT","REL_ROAD",#"WRK_ZONE",
+                 "LGTCON_IM","WEATHR_IM",#"WEATHER2",#"SCH_BUS","ALCHL_IM",
                  
                  #"MAKE.veh", "MODEL",  # Removed due to > 53 factors
-                 "BDYTYP_IM","TOW_VEH.veh","GVWR","V_CONFIG","BUS_USE",
-                 "SPEC_USE.veh","V_ALCH_IM","SPEEDREL","DR_SF1","DR_SF2","DR_SF3","DR_SF4",
-                 "VTRAFWAY","VALIGN","VPROFILE","VSURCOND","VTRAFCON",
+                 "GVWR","V_CONFIG",#"BUS_USE","TOW_VEH.veh",
+                 "DR_SF1","DR_SF2",#"DR_SF3","DR_SF4","SPEC_USE.veh","V_ALCH_IM",
+                 "VTRAFWAY","VALIGN","VPROFILE","VSURCOND","VTRAFCON","SPEEDREL",
                  "VTCONT_F","PCRASH1_IM",
                  
-                 "PBSEX","PBCWALK","PBSWALK","PBSZONE","PEDPOS","MOTMAN",
+                 "PBSEX","PBCWALK","PBSWALK","PEDPOS","MOTMAN",#"PBSZONE",
                  "PEDLEG","PEDSNR","PEDCGP",
                  
                  "MDRDSTRD",
@@ -23,8 +23,9 @@ data.factors = c("MONTH","WKDY_IM","HOUR_IM","TYP_INT","REL_ROAD","WRK_ZONE",
 
 data.numbers = c("INJ_SEV",
                  "TRAV_SP","VNUM_LAN","VSPD_LIM",
-                 "MDLYR_IM",
-                 "PBAGE");
+                 #"MDLYR_IM",
+                 "PBAGE",
+                 "BDYTYP_IM"); #MOVED to categorical in order to bin
 
 data.get_df <- function() {
   # Load data from CSVs
@@ -88,7 +89,7 @@ data.clean_factors <- function(df, min_data = 5) {
 data.filter <- function(df) {
   # Filter only pedestrians (PBPTYPE is 5 and PEDLOC <= 2)
   #   Also filter out unknown severities
-  df[which(df$PBPTYPE==5 & df$PEDLOC<=2 & df$INJ_SEV<=4),]
+  df[which(df$PBPTYPE==5 & df$INJ_SEV<=4),] #& df$PEDLOC<=2 
 }
 
 data.get_raw_df <- function() {
@@ -132,4 +133,3 @@ data.load_csvs <- function(file) {
   
   ldply(files, read.csv)
 }
-
