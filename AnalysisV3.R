@@ -5,6 +5,7 @@ library(e1071)
 library(class)
 library(glmnet)
 library(car)
+library(MASS)
 
 #Create the logistic regression model
 clf_logistic <- glm(INJ_SEV~., data=df.small, family="binomial")
@@ -16,8 +17,18 @@ sigs = coEfs$`Pr(>|z|)` <= 0.05 # include only variables significant at 0.05 lev
 sigCoefs = coEfs[sigs,]
 sortSignif = sigCoefs[order(sigCoefs$Estimate),] # sort these significant coefficients descending according to the magnitude of their coefficient
 head(sortSignif,60) #show the top 60 significant coefficients
-
 write.csv(sortSignif,'sigVars.csv',row.names = TRUE) #write to a csv file for excel processing
+
+
+#Create a stepwise logistic regression model
+#References:  https://www.rdocumentation.org/packages/MASS/versions/7.3-23/topics/stepAIC
+#             https://ashutoshtripathi.com/2019/06/10/what-is-stepaic-in-r/
+STEP = stepAIC(clf_logistic)
+summary(STEP)
+
+#the backwards-stepped model has fewer coefficients than the original model
+length(coef(clf_logistic))
+length(coef(STEP))
 
 #Use to check the distribution of INJ_SEV for any variable
 df.orig$BDYcats = df$BDYcats
@@ -60,4 +71,3 @@ accuracy = sum(df.test$INJ_SEV == FALSE)/nrow((df.test))
 TPR = 0 #correctly predicts positive class
 FPR = 0 #incorrectly predicts the positive class
 c(Accuracy=accuracy, TPR=TPR, FPR=FPR) # Currently the model is a slight improvement over the baseline, yay!
-# Testing GitHub- Zade

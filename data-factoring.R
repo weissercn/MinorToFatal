@@ -57,8 +57,8 @@ df$SPcats = cut(df$TRAV_SP,c(-1,5,10,15,20,25,30,35,40,55,200,1000),labels=c('0_
 df$SPEEDREL = recode(df$SPEEDREL,"c('0')='no';c('2','3','4','5')='yes';c('8','9')='unk'");df = within(df, {SPEEDREL = relevel(SPEEDREL,ref="unk")})
 df$LIMcats = cut(df$VSPD_LIM,c(-1,0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,95,1000),labels=c('none','5','10','15','20','25','30','35','40','45','50','55','60','65','70','75plus','unk')); df = within(df, {LIMcats = relevel(LIMcats,ref="unk")})
 
-#No driver present so coded MDRDSTRD '16' = NA
-df$MDRDSTRD = recode(df$MDRDSTRD,"c('16')=NA;c('0','99','96')='no';c('1','3','4','5','6','7','8','9','10','11','12','13','14','15','17','18','19','92','93','97','98')='yes'")
+#No driver present so coded MDRDSTRD '16' = not distracted
+df$MDRDSTRD = recode(df$MDRDSTRD,"c('0','99','96','16')='no';c('1','3','4','5','6','7','8','9','10','11','12','13','14','15','17','18','19','92','93','97','98')='yes'")
 df$DRIMPAIR = recode(df$DRIMPAIR,"c('0','95','98','99')='no';c('1','2','3','4','5','6','7','8','9','10','96')='yes'")
 df$MVISOBSC = recode(df$MVISOBSC,"c('0','95','99')='no';c('1','2','3','4','5','6','7','8','9','10','11','12','13','14','97','98')='yes'")
 
