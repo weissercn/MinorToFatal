@@ -52,6 +52,7 @@ df$VTRAFCON = recode(df$VTRAFCON,"c('0')='none';c('1','2','3','4','7','8','9')='
 df$PCRASH1_IM = recode(df$PCRASH1_IM,"c('98','99','0')='unk'");df = within(df, {PCRASH1_IM = relevel(PCRASH1_IM,ref="unk")})
 df$VTRAFWAY = recode(df$VTRAFWAY,"c('8','9')='unk';c('0')='nonTraffic';c('4')='oneWay';c('6')='ramp';c('1','5')='twoWayNoDivide';c('2','3')='twoWayDivide'");df = within(df, {VTRAFWAY = relevel(VTRAFWAY,ref="unk")})
 df$VNUM_LAN = cut(df$VNUM_LAN,c(-1,0,1,2,3,4,5,6,7,9),labels=c('nonTraffic','1','2','3','4','5','6','7plus','unk')); df$VNUM_LAN = factor(df$VNUM_LAN, levels = c('unk','nonTraffic','1','2','3','4','5','6','7plus'))
+df$VTCONT_F = recode(df$VTCONT_F,"c('8','9')='unk';c('0')='noControl';c('1','2')='notFunction';c('3')='Function'");df = within(df, {VTCONT_F = relevel(VTCONT_F,ref="unk")})
 # Condense TRAV_SP to larger category bins
 df$SPcats = cut(df$TRAV_SP,c(-1,5,10,15,20,25,30,35,40,55,200,1000),labels=c('0_5','5_10','10_15','15_20','20_25','25_30','30_35','35_40','40_55','55_200','unk')); df = within(df, {SPcats = relevel(SPcats,ref="unk")})
 df$SPEEDREL = recode(df$SPEEDREL,"c('0')='no';c('2','3','4','5')='yes';c('8','9')='unk'");df = within(df, {SPEEDREL = relevel(SPEEDREL,ref="unk")})
@@ -65,7 +66,7 @@ df$MVISOBSC = recode(df$MVISOBSC,"c('0','95','99')='no';c('1','2','3','4','5','6
 
 # !! Logistic regression model (excluding the drop variables that were not helpful)
 drops <- c("BDYTYP_IM","V_CONFIG","GVWR","VNUM_LAN","TRAV_SP",
-           "TYP_INT","PEDLEG","PEDSNR","VALIGN","VPROFILE","VCONT_F","DR_SF1","DR_SF2",'VSPD_LIM','pcrash_F')
+           "TYP_INT","PEDLEG","PEDSNR","VALIGN","VPROFILE","VTCONT_F","DR_SF1","DR_SF2",'VSPD_LIM','pcrash_F')
 df.small = df[ , !(names(df) %in% drops)]
 
 #Use to check the distribution of INJ_SEV for any variable

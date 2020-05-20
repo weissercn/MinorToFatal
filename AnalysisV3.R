@@ -6,6 +6,9 @@ library(class)
 library(glmnet)
 library(car)
 library(MASS)
+library(rpart) # for building CART model
+library(rpart.plot) # a library for an alternative way of plotting CART trees.
+library(caTools)
 
 #Create the logistic regression model
 clf_logistic <- glm(INJ_SEV~., data=df.small, family="binomial")
@@ -24,11 +27,41 @@ write.csv(sortSignif,'sigVars.csv',row.names = TRUE) #write to a csv file for ex
 #References:  https://www.rdocumentation.org/packages/MASS/versions/7.3-23/topics/stepAIC
 #             https://ashutoshtripathi.com/2019/06/10/what-is-stepaic-in-r/
 STEP = stepAIC(clf_logistic)
+#Final logistic regression model after the stepAIC process:
+STEP = glm(formula = INJ_SEV ~ HOUR_IM + LGTCON_IM + WEATHR_IM + VTRAFWAY + 
+      VSURCOND + VTRAFCON + VTCONT_F + PCRASH1_IM + PBSEX + PEDPOS + 
+      MOTMAN + PEDCGP + DRIMPAIR + MVISOBSC + NMIMPAIR + MPR_ACT + 
+      PBAGE + BDYcats + SPcats + LIMcats, family = "binomial", 
+    data = df.small)
 summary(STEP)
-
 #the backwards-stepped model has fewer coefficients than the original model
 length(coef(clf_logistic))
 length(coef(STEP))
+
+
+#Ordered Logistic Regression (Ordered Logit) Model
+#Reference: https://www.rdocumentation.org/packages/MASS/versions/7.3-49/topics/polr
+df.order = df.small
+df.order$INJ_SEV = factor(df.orig$INJ_SEV, levels=0:4, ordered=TRUE) #convert the binary back to a multilevel scale
+#Ordered logistic regression model
+orderLogit = polr(INJ_SEV~., data=df.order, Hess=TRUE)
+summary(orderLogit)
+
+orderPredict = predict(orderLogit, df.order, type = "probs")
+head(orderPredict) #how to interpret these probabilities/compare with logit model?
+
+
+#CART Model
+tree = rpart(INJ_SEV~., data=df.small, minbucket=10) #try different cp values? Deafault is 0.01
+prp(tree,tweak=1.2) #recall that 'yes' is always the left branch
+rpart.plot(tree,tweak=1.2)
+
+
+
+
+
+
+
 
 #Use to check the distribution of INJ_SEV for any variable
 df.orig$BDYcats = df$BDYcats
