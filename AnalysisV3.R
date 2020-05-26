@@ -39,24 +39,16 @@ length(coef(clf_logistic))
 length(coef(STEP))
 
 
-#Ordered Probit Model
+#Ordered Logistic Regression (Ordered Logit) Model
 #Reference: https://www.rdocumentation.org/packages/MASS/versions/7.3-49/topics/polr
 df.order = df.small
-df.order$INJ_SEV = factor(df.orig$INJ_SEV, levels=0:4, ordered=TRUE) #convert the binary 
-summary(df.order)
-#back to a multilevel scale
-orderProbit = polr(INJ_SEV~., data=df.order, method = 'probit', Hess=TRUE) #method = 'logistic' will create an ordered logit model instead
-summary(orderProbit)
-#calculate p-values to determine statistically significant coefficients
-ctable = coef(summary(orderProbit))
-p = pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-ctable = cbind(ctable, "p value" = p)
-head(ctable)
+df.order$INJ_SEV = factor(df.orig$INJ_SEV, levels=0:4, ordered=TRUE) #convert the binary back to a multilevel scale
+#Ordered logistic regression model
+orderLogit = polr(INJ_SEV~., data=df.order, Hess=TRUE)
+summary(orderLogit)
 
-orderPredict = predict(orderProbit, df.order) #predict a single severity level
-orderPredict2 = predict(orderProbit, df.order, type = 'prob') #predict the probability of each severity level
-head(orderPredict,20)
-head(orderPredict2,20) 
+orderPredict = predict(orderLogit, df.order, type = "probs")
+head(orderPredict) #how to interpret these probabilities/compare with logit model?
 
 
 #CART Model

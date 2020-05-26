@@ -16,10 +16,6 @@ df$INJ_SEV <- as.factor(df.orig$INJ_SEV > 2)
 
 #Recode and Reorder
 #Variables are binned into larger categories to reduce factor sparsity. Reference the CRSS user guide for what the numbers correspond to for each factor
-
-#An alternative way to refactor data:
-#data$var[data$var == a] = b
-#coverts all elements a in data$var to b
 df$MONTH = recode(df$MONTH,"c('12','1','2')='wint';c('3','4','5')='spring';c('6','7','8')='summ';c('9','10','11')='fall'")
 df$WKDY_IM = recode(df$WKDY_IM,"c('2','3','4','5')='wkday';c('6')='fri';c('7')='sat';c('1')='sun'")
 df$HOUR_IM = recode(df$HOUR_IM,"c('0','1','2','3','4','5')='nightLate';c('6','7','8','9','10','11')='morn';
