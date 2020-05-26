@@ -79,3 +79,6 @@ dplyr::summarise(group_by(df.orig, df.orig$PBSEX),
 #You can save/load DFORIG.Rdata to avoid having to regenerate the data each time
 save(df.orig,file='DFORIG.Rdata')
 #load(file='DFORIG.Rdata')
+write.csv(df.small, 'DFSMALL.csv')
+
+
