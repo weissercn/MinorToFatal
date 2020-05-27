@@ -9,79 +9,62 @@ library(car)
 # Load Data
 source('data-helpers.R')
 df.orig <- data.get_df();
+save(df.orig,file='DFORIG.Rdata')
 
+load(df.orig,file='DFORIG.Rdata')
 # Binary classification
 df <- df.orig
-df$INJ_SEV <- as.factor(df.orig$INJ_SEV > 2)
+#df$INJ_SEV <- as.factor(df.orig$INJ_SEV > 2)
 
 #Recode and Reorder
 #Variables are binned into larger categories to reduce factor sparsity. Reference the CRSS user guide for what the numbers correspond to for each factor
+#Relevel sets the desired variable as the reference for the model. I set "Unknownnown" as the reference to see the contribution from all other possible values
+df$MONTH = recode(df$MONTH,"c('12','1','2')='Winter';c('3','4','5')='Spring';c('6','7','8')='Summer';c('9','10','11')='Fall'")
+df$WKDY_IM = recode(df$WKDY_IM,"c('2','3','4','5')='Mon-Thur';c('6')='Fri';c('7')='Sat';c('1')='Sun'")
+df$HOUR_IM = recode(df$HOUR_IM,"c('0','1','2','3','4','5')='0000-0559';c('6','7','8','9','10','11')='0600-1159';
+                    c('12','13','14','15','16','17')='1200-1759';c('18','19','20','21','22','23')='1800-2359'")
+df$WEATHR_IM = recode(df$WEATHR_IM,"c('1','98')='Clear';c('2')='Rain';c('3')='Sleet/Hail';c('4')='Snow';c('5')='Fog';
+                      c('10')='Cloudy'")
+df$REL_ROAD = recode(df$REL_ROAD,"c('1','11')='On-Road';c('2','3','4','5','6','7','8')='Off-Road';
+                     c('98')='Unknown'");df = within(df, {REL_ROAD = relevel(REL_ROAD,ref="Unknown")}) 
+df$LGTCON_IM = recode(df$LGTCON_IM,"c('1')='Day';c('2')='Dark-Unlit';c('3')='Dark-Lit';c('4','5')='Dawn/Dusk';
+                      c('6')='Dark-UnknownLgt'"); df = within(df, {LGTCON_IM = relevel(LGTCON_IM,ref="Day")})
+df$PBSEX = df$PBSEX = recode(df$PBSEX,"c('8','9')='Unknown';c('1')='male'; c('2')='female'");df = within(df, {PBSEX = relevel(PBSEX,ref="Unknown")}) 
+df$PBCWALK = recode(df$PBCWALK,"c('1')='Yes';c('0')='No';c('9')='Unknown'")
+df = within(df, {PBCWALK = relevel(PBCWALK,ref="Unknown")})
+df$PBSWALK = recode(df$PBSWALK,"c('1')='Yes';c('0')='No';c('9')='Unknown'")
+df = within(df, {PBSWALK = relevel(PBSWALK,ref="Unknown")})
+df$PEDPOS = recode(df$PEDPOS,"c('1')='Intersection';c('2')='Crosswalk';c('3')='Lane';c('4','5','6')='Shoulder';c('7','8')='Non-Trafficway';c('9')='Unknown'");df = within(df, {PEDPOS = relevel(PEDPOS,ref="Unknown")}) 
+df$MOTMAN = recode(df$MOTMAN,"c('8','9')='Unknown';c('1')='Left';c('2')='Right';c('3')='Straight'");df = within(df, {MOTMAN = relevel(MOTMAN,ref="Unknown")})
+df$NMIMPAIR = recode(df$NMIMPAIR,"c('98','99','0')='Not-Impaired';c('1','2','8','9')='Temporary-Impaired';c('3','4','5','6','7','10','96')='Physical-Impaired'")
+df$VSURCOND = recode(df$VSURCOND,"c('0','8','98')='Unknown';c('1')='Dry';c('2')='Wet';c('3','4','10')='Snow/Slush'");df = within(df, {VSURCOND = relevel(VSURCOND,ref="Unknown")})
+df$VTRAFCON = recode(df$VTRAFCON,"c('0')='None';c('1','2','3','4','7','8','9')='Signal';c('20','21','23','28','29','40','50')='Sign';c('97','98','99')='Unknown'");df = within(df, {VTRAFCON = relevel(VTRAFCON,ref="Unknown")})
+df$VTRAFWAY = recode(df$VTRAFWAY,"c('8','9')='Unknown';c('0')='Non-Trafficway';c('4')='One-way';c('6')='Ramp';c('1','5')='Twoway-Undivided';c('2','3')='Twoway-Divided'");df = within(df, {VTRAFWAY = relevel(VTRAFWAY,ref="Unknown")})
+df$VTCONT_F = recode(df$VTCONT_F,"c('8','9')='Unknown';c('0')='No-Control';c('1','2')='Not-Functional';c('3')='Functional'");df = within(df, {VTCONT_F = relevel(VTCONT_F,ref="Unknown")})
+df$SPEEDREL = recode(df$SPEEDREL,"c('0')='No';c('2','3','4','5')='Yes';c('8','9')='Unknown'");df = within(df, {SPEEDREL = relevel(SPEEDREL,ref="Unknown")})
+df$DRIMPAIR = recode(df$DRIMPAIR,"c('0','95','98','99')='No';c('1','2','3','4','5','6','7','8','9','10','96')='Yes'")
+df$MVISOBSC = recode(df$MVISOBSC,"c('0','95','99')='No';c('1','2','3','4','5','6','7','8','9','10','11','12','13','14','97','98')='Yes'")
+df$BDYTYP_IM = recode(df$BDYTYP_IM,"c('1','2','3','4','5','6','7','8','9','10','11','12','13','17','95')='Auto';c('14','15','16','19')='Utility';c('20','21','22','28','29')='Van';c('30','31','32','33','34','39','40','41','45','48','49')='Truck-Light';c('60','61','62','63','64','66','67','71','72','78','79','50','51','52','55','58','59')='Truck-Heavy/Bus';c('80','89','90')='Motorcycle'")
+df$MDRDSTRD = recode(df$MDRDSTRD,"c('0','99','96')='No';c('1','3','4','5','6','7','8','9','10','11','12','13','14','15','17','18','19','92','93','97','98')='Yes'") #No driver present so coded MDRDSTRD '16' = not distracted?
 
-#An alternative way to refactor data:
-#data$var[data$var == a] = b
-#coverts all elements a in data$var to b
-df$MONTH = recode(df$MONTH,"c('12','1','2')='wint';c('3','4','5')='spring';c('6','7','8')='summ';c('9','10','11')='fall'")
-df$WKDY_IM = recode(df$WKDY_IM,"c('2','3','4','5')='wkday';c('6')='fri';c('7')='sat';c('1')='sun'")
-df$HOUR_IM = recode(df$HOUR_IM,"c('0','1','2','3','4','5')='nightLate';c('6','7','8','9','10','11')='morn';
-                    c('12','13','14','15','16','17')='aftern';c('18','19','20','21','22','23')='nightEarly'")
-df$WEATHR_IM = recode(df$WEATHR_IM,"c('1','98')='clear';c('2')='rain';c('3')='sleetHail';c('4')='snow';c('5')='fog';
-                      c('10')='cloud'")
-df$REL_ROAD = recode(df$REL_ROAD,"c('1','11')='onRoad';c('2','3','4','5','6','7','8')='offRoad';
-                     c('98')='unk'");df = within(df, {REL_ROAD = relevel(REL_ROAD,ref="unk")}) 
-df$LGTCON_IM = recode(df$LGTCON_IM,"c('1')='day';c('2')='darkNotLgt';c('3')='darkLgt';c('4','5')='dawnDusk';
-                      c('6')='darkUnkLgt'"); df = within(df, {LGTCON_IM = relevel(LGTCON_IM,ref="day")})
-
-#Bin age into categorical variables
-df$PBAGE = cut(df$PBAGE,c(-1,15,30,45,60,75,130,1000),labels=c('0_15','16_30','31_45','46_60','61_75','75plus','unk')); df$PBAge = factor(df$PBAge, levels = c('unk','0_15','16_30','31_45','46_60','61_75','75plus'))
-df$PBSEX = df$PBSEX = recode(df$PBSEX,"c('8','9')='unk';c('1')='male'; c('2')='female'");df = within(df, {PBSEX = relevel(PBSEX,ref="unk")}) 
-#Relevel sets the desired variable as the reference for the model. I set "unknown" as the reference to see the contribution from all other possible values
-df = within(df, {PBCWALK = relevel(PBCWALK,ref="9")})
-df = within(df, {PBSWALK = relevel(PBSWALK,ref="9")})
-df$PEDPOS = recode(df$PEDPOS,"c('1')='inters';c('2')='crossWalk';c('3')='lane';c('4','5','6')='shoulder';c('7','8')='nonTraffic';
-                     c('9')='unk'");df = within(df, {PEDPOS = relevel(PEDPOS,ref="unk")}) 
-df$MOTMAN = recode(df$MOTMAN,"c('8','9')='unk';c('1')='left';c('2')='right';c('3')='straight'");df = within(df, {MOTMAN = relevel(MOTMAN,ref="unk")})
+#These may need more aggregation (re-binning). They are currently in drops
 df$PEDCGP = recode(df$PEDCGP,"c('100','600')='990'");df = within(df, {PEDCGP = relevel(PEDCGP,ref="990")})
-df$MTM_CRSH = recode(df$MTM_CRSH,"c('21','98')='0'")
-df$NMIMPAIR = recode(df$NMIMPAIR,"c('98','99','0')='notImpair';c('1','2','8','9')='tempImpair';c('3','4','5','6','7','10','96')='physImpair'")
+df$MTM_CRSH = recode(df$MTM_CRSH,"c('21','98','5')='None';c('1')='Dart-Out';c('11')='Dash';c('12')='Jaywalk';c('19')='Not Visible';c('2')='Fail-RightofWay';c('3')='Fail-ObeySigns';c('4')='In-RoadwayImproper';c('6')='Inattentive'")
 df$MPR_ACT = recode(df$MPR_ACT,"c('98')='99'");df = within(df, {MPR_ACT = relevel(MPR_ACT,ref="99")})
+#df$PCRASH1_IM = recode(df$PCRASH1_IM,"c('98','99','0')='Unknown';c('1')='Straight';c('2','3,'4','5')='Start/Stop/Acceleration';c('6')='Passing';c('98','99','0')='Unknown'") #incomplete
+#df = within(df, {PCRASH1_IM = relevel(PCRASH1_IM,ref="Unknown")})
 
-# Condense BODYTYP_IM to larger category bins
-df$BDYcats = df$BDYTYP_IM
-df$BDYcats = cut(df$BDYTYP_IM,c(0,13,19,29,39,49,59,79,90,99),labels=c('auto','utility','vanLight','lightTruck','otherTruck','bus','heavyTruck','motorcycle','unk'))
-df$BDYcats = recode(df$BDYcats,"c('unk')='auto'")
-df$BDYTYP_IM = as.factor(df$BDYTYP_IM)
+#All factor dataframe. Bin continuous variables into categorical variables
+df.factors = df
+df.factors$PBAGE = cut(df.factors$PBAGE,c(-1,15,30,45,60,75,130,1000),labels=c('0-15','16-30','31-45','46-60','61-75','75+','Unknown'))
+df.factors$PBAGE = factor(df.factors$PBAGE, levels = c('Unknown','0-15','16-30','31-45','46-60','61-75','75+'))
+df.factors$VNUM_LAN = cut(df.factors$VNUM_LAN,c(-1,0,1,2,3,4,5,6,9),labels=c('Non-Trafficway','1','2','3','4','5','6+','Unknown'))
+df.factors$VNUM_LAN = factor(df.factors$VNUM_LAN, levels = c('Unknown','Non-Trafficway','1','2','3','4','5','6+'))
+df.factors$TRAV_SP = cut(df.factors$TRAV_SP,c(-1,5,10,15,20,25,30,35,40,200,1000),labels=c('0-5','5-10','10-15','15-20','20-25','25-30','30-35','35-40','40+','Unknown'))
+df.factors = within(df.factors, {TRAV_SP = relevel(TRAV_SP,ref="Unknown")})
+df.factors$VSPD_LIM = cut(df.factors$VSPD_LIM,c(-1,0,20,25,30,35,40,45,95,1000),labels=c('None','<25','25','30','35','40','45','50+','Unknown')); df.factors = within(df.factors, {VSPD_LIM = relevel(VSPD_LIM,ref="Unknown")})
 
-df$VSURCOND = recode(df$VSURCOND,"c('0','8','98')='unk';c('1')='dry';c('2')='wet';c('3','4','10')='wetOther'");df = within(df, {VSURCOND = relevel(VSURCOND,ref="unk")})
-df$VTRAFCON = recode(df$VTRAFCON,"c('0')='none';c('1','2','3','4','7','8','9')='lightSignal';c('20','21','23','28','29','40','50')='physSign';c('97','98','99')='unk'");df = within(df, {VTRAFCON = relevel(VTRAFCON,ref="unk")})
-df$PCRASH1_IM = recode(df$PCRASH1_IM,"c('98','99','0')='unk'");df = within(df, {PCRASH1_IM = relevel(PCRASH1_IM,ref="unk")})
-df$VTRAFWAY = recode(df$VTRAFWAY,"c('8','9')='unk';c('0')='nonTraffic';c('4')='oneWay';c('6')='ramp';c('1','5')='twoWayNoDivide';c('2','3')='twoWayDivide'");df = within(df, {VTRAFWAY = relevel(VTRAFWAY,ref="unk")})
-df$VNUM_LAN = cut(df$VNUM_LAN,c(-1,0,1,2,3,4,5,6,7,9),labels=c('nonTraffic','1','2','3','4','5','6','7plus','unk')); df$VNUM_LAN = factor(df$VNUM_LAN, levels = c('unk','nonTraffic','1','2','3','4','5','6','7plus'))
-df$VTCONT_F = recode(df$VTCONT_F,"c('8','9')='unk';c('0')='noControl';c('1','2')='notFunction';c('3')='Function'");df = within(df, {VTCONT_F = relevel(VTCONT_F,ref="unk")})
-# Condense TRAV_SP to larger category bins
-df$SPcats = cut(df$TRAV_SP,c(-1,5,10,15,20,25,30,35,40,55,200,1000),labels=c('0_5','5_10','10_15','15_20','20_25','25_30','30_35','35_40','40_55','55_200','unk')); df = within(df, {SPcats = relevel(SPcats,ref="unk")})
-df$SPEEDREL = recode(df$SPEEDREL,"c('0')='no';c('2','3','4','5')='yes';c('8','9')='unk'");df = within(df, {SPEEDREL = relevel(SPEEDREL,ref="unk")})
-df$LIMcats = cut(df$VSPD_LIM,c(-1,0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,95,1000),labels=c('none','5','10','15','20','25','30','35','40','45','50','55','60','65','70','75plus','unk')); df = within(df, {LIMcats = relevel(LIMcats,ref="unk")})
-
-#No driver present so coded MDRDSTRD '16' = not distracted
-df$MDRDSTRD = recode(df$MDRDSTRD,"c('0','99','96','16')='no';c('1','3','4','5','6','7','8','9','10','11','12','13','14','15','17','18','19','92','93','97','98')='yes'")
-df$DRIMPAIR = recode(df$DRIMPAIR,"c('0','95','98','99')='no';c('1','2','3','4','5','6','7','8','9','10','96')='yes'")
-df$MVISOBSC = recode(df$MVISOBSC,"c('0','95','99')='no';c('1','2','3','4','5','6','7','8','9','10','11','12','13','14','97','98')='yes'")
-
-
-# !! Logistic regression model (excluding the drop variables that were not helpful)
-drops <- c("BDYTYP_IM","V_CONFIG","GVWR","VNUM_LAN","TRAV_SP",
-           "TYP_INT","PEDLEG","PEDSNR","VALIGN","VPROFILE","VTCONT_F","DR_SF1","DR_SF2",'VSPD_LIM','pcrash_F')
+# exclude the drop variables that are not helpful
+drops <- c("V_CONFIG","GVWR","TYP_INT","PEDLEG","PEDSNR","VALIGN","VPROFILE","VTCONT_F","DR_SF1","DR_SF2",'pcrash_F','MPR_ACT','MTM_CRSH','PEDCGP','PCRASH1_IM')
 df.small = df[ , !(names(df) %in% drops)]
-
-#Use to check the distribution of INJ_SEV for any variable
-dplyr::summarise(group_by(df.orig, df.orig$PBSEX),
-                 count = n(),
-                 inj_sev = mean(INJ_SEV),
-                 inj_sev_std = sd(INJ_SEV))
-
-
-#You can save/load DFORIG.Rdata to avoid having to regenerate the data each time
-save(df.orig,file='DFORIG.Rdata')
-#load(file='DFORIG.Rdata')
-write.csv(df.small, 'DFSMALL.csv')
-
+df.factors.small = df.factors[ , !(names(df.factors) %in% drops)]

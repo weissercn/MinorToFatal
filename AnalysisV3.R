@@ -10,6 +10,8 @@ library(rpart) # for building CART model
 library(rpart.plot) # a library for an alternative way of plotting CART trees.
 library(caTools)
 
+load(file='DFSMALL.Rdata')
+
 #Create the logistic regression model
 clf_logistic <- glm(INJ_SEV~., data=df.small, family="binomial")
 summary(clf_logistic)
@@ -60,10 +62,10 @@ head(orderPredict2,20)
 
 
 #CART Model
-tree = rpart(INJ_SEV~., data=df.small, minbucket=10) #try different cp values? Deafault is 0.01
+tree = rpart(INJ_SEV~., data=df.factors.small) #try different cp values? Deafault is 0.01
 prp(tree,tweak=1.2) #recall that 'yes' is always the left branch
 rpart.plot(tree,tweak=1.2)
-
+#Cross-validation requires a loss function to evaluate different values of cp?
 
 
 
